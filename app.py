@@ -353,12 +353,12 @@ with st.sidebar:
     st.markdown("**Model Parameters**")
 
     projection_years = st.slider("Projection Years", min_value=3, max_value=10, value=5)
-    erp = st.number_input("Equity Risk Premium", min_value=0.01, max_value=0.15,
-                          value=0.055, step=0.001, format="%.3f",
-                          help="Damodaran implied ERP recommended")
+    st.caption("**Equity Risk Premium (ERP)** — the excess return of equities over the risk-free rate. Used in CAPM: Ke = rf + β × ERP. Source: Damodaran (implied ERP updated monthly).")
+    erp = st.number_input("ERP", min_value=0.01, max_value=0.15,
+                          value=0.055, step=0.001, format="%.3f")
+    st.caption("**Size Premium** — additional return demanded for small/micro-cap illiquidity risk. Added directly to Ke. Use 0% for large-caps; typically 1–3% for small-caps.")
     size_premium = st.number_input("Size Premium", min_value=0.0, max_value=0.05,
-                                   value=0.0, step=0.001, format="%.3f",
-                                   help="Add for small-cap illiquidity")
+                                   value=0.0, step=0.001, format="%.3f")
 
     st.markdown("---")
 
