@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import seaborn as sns
 import requests
-from datetime import datetime, date, timezone
+from datetime import datetime, date
 
 # ── Page config ───────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -798,6 +798,10 @@ wacc_html = f"""
     <div class="ev-wacc-row"><span class="wk">Debt Weight (wd)</span><span class="wv">{wd*100:.1f}%</span></div>
   </div>
 </div>
+<div style="font-family:monospace;font-size:0.8rem;color:#444;padding:0.65rem 1.3rem;background:#f2efe8;border:1px solid #dedad1;margin-top:0.6rem;line-height:1.8;">
+  WACC &nbsp;=&nbsp; (w<sub>e</sub> &times; K<sub>e</sub>) + (w<sub>d</sub> &times; K<sub>d</sub>)<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= ({we*100:.1f}% &times; {Ke*100:.2f}%) + ({wd*100:.1f}% &times; {Kd_at*100:.2f}%)
+</div>
 <div class="ev-wacc-total">
   <span>WACC</span><span>{wacc*100:.2f}%</span>
 </div>
@@ -1173,23 +1177,49 @@ else:
 # ─────────────────────────────────────────────────────────────────────────────
 st.markdown('<div class="ev-section"><div class="ev-section-label">10</div><h2>Recent News</h2></div>', unsafe_allow_html=True)
 
-_news     = tkr.news or []
-_articles = [a for a in _news if a.get("link") and a.get("title")][:6]
+import xml.etree.ElementTree as ET
+
+def _fetch_rss_news(ticker, n=10):
+    url = f"https://feeds.finance.yahoo.com/rss/2.0/headline?s={ticker}&region=US&lang=en-US"
+    try:
+        r = requests.get(url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
+        r.raise_for_status()
+        root = ET.fromstring(r.text)
+        out = []
+        for item in root.findall(".//item")[:n]:
+            title = item.findtext("title", "").strip()
+            link  = item.findtext("link",  "#").strip()
+            pub   = item.findtext("pubDate", "").strip()
+            src   = item.findtext("source", "Yahoo Finance")
+            if title and link:
+                out.append({"title": title, "link": link, "pubDate": pub, "source": src})
+        return out
+    except Exception:
+        return []
+
+def _parse_rss_date(s):
+    for fmt in ("%a, %d %b %Y %H:%M:%S %z", "%a, %d %b %Y %H:%M:%S %Z"):
+        try:
+            return datetime.strptime(s, fmt).strftime("%b %d, %Y")
+        except Exception:
+            continue
+    return s[:16] if s else ""
+
+_articles = _fetch_rss_news(ticker_input, n=10)
+if not _articles:
+    _yf_news  = tkr.news or []
+    _articles = [{"title": a.get("title",""), "link": a.get("link","#"),
+                  "pubDate": "", "source": a.get("publisher","Unknown")}
+                 for a in _yf_news if a.get("link") and a.get("title")][:8]
 
 if not _articles:
     st.markdown(f'<div class="ev-info">No recent news found for {ticker_input}.</div>', unsafe_allow_html=True)
 else:
     news_html = ""
     for a in _articles:
-        title = a.get("title","No title"); link = a.get("link","#")
-        pub   = a.get("publisher") or "Unknown"
-        ts    = a.get("providerPublishTime")
-        dt_s  = datetime.fromtimestamp(ts,tz=timezone.utc).strftime("%b %d, %Y") if ts else ""
-        news_html += f"""
-        <div class="ev-news-item">
-          <a href="{link}" target="_blank">{title}</a>
-          <div class="ev-news-meta">{pub}{" · " + dt_s if dt_s else ""}</div>
-        </div>"""
+        dt_s = _parse_rss_date(a.get("pubDate",""))
+        meta = a.get("source","Yahoo Finance") + (" · " + dt_s if dt_s else "")
+        news_html += f'<div class="ev-news-item"><a href="{a["link"]}" target="_blank">{a["title"]}</a><div class="ev-news-meta">{meta}</div></div>'
     st.markdown(news_html, unsafe_allow_html=True)
 
 # ── Footer ────────────────────────────────────────────────────────────────────
