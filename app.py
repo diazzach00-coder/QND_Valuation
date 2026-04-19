@@ -799,11 +799,7 @@ wacc_html = f"""
   </div>
 </div>
 <div style="font-family:monospace;font-size:0.8rem;color:#444;padding:0.65rem 1.3rem;background:#f2efe8;border:1px solid #dedad1;margin-top:0.6rem;line-height:1.8;">
-  WACC &nbsp;=&nbsp; (w<sub>e</sub> &times; K<sub>e</sub>) + (w<sub>d</sub> &times; K<sub>d</sub>)<br>
-  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= ({we*100:.1f}% &times; {Ke*100:.2f}%) + ({wd*100:.1f}% &times; {Kd_at*100:.2f}%)
-</div>
-<div class="ev-wacc-total">
-  <span>WACC</span><span>{wacc*100:.2f}%</span>
+  WACC = ({we*100:.1f}% &times; {Ke*100:.2f}%) + ({wd*100:.1f}% &times; {Kd_at*100:.2f}%) = <strong style="color:#0d0d0d;font-size:1rem;">{wacc*100:.2f}%</strong>
 </div>
 """
 st.markdown(wacc_html, unsafe_allow_html=True)
